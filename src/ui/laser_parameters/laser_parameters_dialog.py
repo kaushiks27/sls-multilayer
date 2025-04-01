@@ -394,7 +394,7 @@ class LaserParametersDialog(QDialog):
     def reset_to_defaults(self):
         """Set default parameter values."""
         # Set default marking parameters
-        self.mark_speed_spinbox.setValue(3000)
+        self.mark_speed_spinbox.setValue(4500)
         self.jump_speed_spinbox.setValue(5000)
         self.jump_delay_spinbox.setValue(100)
         self.laser_on_delay_spinbox.setValue(100)

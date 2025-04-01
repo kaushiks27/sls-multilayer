@@ -90,30 +90,41 @@ class LayerQueueWidget(QWidget):
         self.refresh_layer_list()
         
     def refresh_layer_list(self):
-        """Refresh the layer list display."""
-        self.layer_list.clear()
+        """Refresh the layer list display without recursive calls"""
+        try:
+            self.layer_list.clear()
+            
+            for i, filepath in enumerate(self.layer_files):
+                filename = os.path.basename(filepath)
+                item = QListWidgetItem(f"{i+1}: {filename}")
+                
+                # Set icon or styling based on layer status
+                if i < self.current_layer_index:
+                    # Completed layer
+                    item.setForeground(QBrush(QColor(100, 100, 100)))  # Gray out completed
+                elif i == self.current_layer_index:
+                    # Current layer
+                    item.setForeground(QBrush(QColor(0, 100, 0)))  # Green for current
+                    font = item.font()
+                    font.setBold(True)
+                    item.setFont(font)
+                
+                self.layer_list.addItem(item)
+                
+            self.count_label.setText(f"Layers: {len(self.layer_files)}")
+            
+            # Directly update current layer without recursive call
+            if 0 <= self.current_layer_index < len(self.layer_files):
+                self.current_layer_label.setText(f"{self.current_layer_index + 1}/{len(self.layer_files)}: {os.path.basename(self.layer_files[self.current_layer_index])}")
+                progress = int((self.current_layer_index + 1) / len(self.layer_files) * 100)
+                self.layer_progress.setValue(progress)
+            else:
+                self.current_layer_label.setText("None")
+                self.layer_progress.setValue(0)
         
-        for i, filepath in enumerate(self.layer_files):
-            filename = os.path.basename(filepath)
-            item = QListWidgetItem(f"{i+1}: {filename}")
-            
-            # Set icon or styling based on layer status
-            if i < self.current_layer_index:
-                # Completed layer
-                item.setForeground(QBrush(QColor(100, 100, 100)))  # Gray out completed
-            elif i == self.current_layer_index:
-                # Current layer
-                item.setForeground(QBrush(QColor(0, 100, 0)))  # Green for current
-                font = item.font()
-                font.setBold(True)
-                item.setFont(font)
-            
-            self.layer_list.addItem(item)
-            
-        self.count_label.setText(f"Layers: {len(self.layer_files)}")
-        
-        # Update current layer label and progress
-        self.update_current_layer(self.current_layer_index)
+        except Exception as e:
+            print(f"Error in refresh_layer_list: {e}")
+            logging.error(f"Layer list refresh failed: {e}")
         
     def on_layer_selected(self, item):
         """
