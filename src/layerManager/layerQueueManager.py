@@ -26,41 +26,26 @@ class LayerQueueManager:
         self.logger.setLevel(logging.INFO)
         
     def load_from_folder(self, folder_path):
-        """
-        Load all layer files from a folder.
-        
-        Args:
-            folder_path (str): Path to the folder containing layer files
-            
-        Returns:
-            list: Sorted list of file paths
-        """
-        self.logger.info(f"Loading layer files from folder: {folder_path}")
-        self.layer_files = []
-        valid_extensions = ['.emd']  # Feeltek/LenMark file format
+        valid_extensions = ['.emd']
         layer_file_tuples = []
         
-        try:
-            for file in os.listdir(folder_path):
-                if any(file.lower().endswith(ext) for ext in valid_extensions):
-                    # Extract layer number from filename if available
-                    match = re.search(r'layer[_-]?(\d+)', file.lower())
-                    file_path = os.path.join(folder_path, file)
-                    
-                    if match:
-                        layer_num = int(match.group(1))
-                        self.logger.debug(f"Found layer file {file} with layer number {layer_num}")
-                        layer_file_tuples.append((layer_num, file_path))
-                    else:
-                        # If no layer number in filename, use modified time
-                        mod_time = os.path.getmtime(file_path)
-                        self.logger.debug(f"Found layer file {file} with modified time {mod_time}")
-                        layer_file_tuples.append((mod_time, file_path))
-        except Exception as e:
-            self.logger.error(f"Error loading files from folder: {e}")
-            return []
+        for file in os.listdir(folder_path):
+            if any(file.lower().endswith(ext) for ext in valid_extensions):
+                file_path = os.path.join(folder_path, file)
+                
+                # New regex pattern to match img_X.emd format
+                img_match = re.search(r'img_(\d+)\.emd', file)
+                
+                if img_match:
+                    # Extract layer number from img_X format
+                    layer_num = int(img_match.group(1))
+                    layer_file_tuples.append((layer_num, file_path))
+                else:
+                    # Fallback to modification time if no layer number found
+                    mod_time = os.path.getmtime(file_path)
+                    layer_file_tuples.append((mod_time, file_path))
         
-        # Sort by layer number or modified time
+        # Sort by the first element (layer number or modification time)
         layer_file_tuples.sort(key=lambda x: x[0])
         
         # Store just the file paths in order
@@ -68,7 +53,6 @@ class LayerQueueManager:
         self.total_layers = len(self.layer_files)
         self.current_layer_index = -1
         
-        self.logger.info(f"Loaded {self.total_layers} layer files")
         return self.layer_files
     
     def get_current_layer(self):

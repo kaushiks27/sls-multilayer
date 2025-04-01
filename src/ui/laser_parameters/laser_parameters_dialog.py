@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QTabWidget, QWidget,
 from PyQt5.QtCore import Qt
 import yaml
 import os
+import re
 
 class LaserParametersDialog(QDialog):
     def __init__(self, scancard, parent=None, layer_count=0):
@@ -14,8 +15,21 @@ class LaserParametersDialog(QDialog):
         self.setWindowTitle("Laser Marking Parameters")
         self.setGeometry(100, 100, 700, 900)
 
+        # If layer_count is 0, try to get layer count from folder
+        if layer_count == 0:
+            try:
+                last_used_folder = self.get_last_used_layer_folder()
+                if last_used_folder and os.path.exists(last_used_folder):
+                    layer_count = self.get_max_layer_count(last_used_folder)
+            except Exception as e:
+                print(f"Error determining layer count: {e}")
+                layer_count = 1  # Default to 1 if determination fails
+
         # Store the layer count from the layer queue manager
         self.layer_count = layer_count
+
+        # Update the max layer spinbox with the determined layer count
+        # self.max_layer_spinbox.setValue(layer_count)
         
         # Main layout
         main_layout = QVBoxLayout()
@@ -312,6 +326,8 @@ class LaserParametersDialog(QDialog):
         # Initialize scancard and load parameters
         self.scancard = scancard
         self.load_parameters()
+
+        
     
     def load_parameters(self):
         """Load parameters from scancard and update UI."""
@@ -658,6 +674,33 @@ class LaserParametersDialog(QDialog):
                 "Parameter Update Error",
                 f"Failed to update parameters: {str(e)}"
             )
+    def get_last_used_layer_folder(self):
+        """
+        Retrieve the last used layer folder path.
+        For now, return an empty string as a placeholder.
+        """
+        return ''  # You'll customize this later based on your application's configuration
+
+    def get_max_layer_count(self, folder_path):
+        """
+        Determine max layer count based on img_X.emd files
+        
+        Args:
+            folder_path (str): Path to the folder containing layer files
+        
+        Returns:
+            int: Maximum layer count
+        """
+        layer_files = [f for f in os.listdir(folder_path) if f.endswith('.emd')]
+        
+        # Extract layer numbers using the new img_X format
+        layer_numbers = []
+        for file in layer_files:
+            match = re.search(r'img_(\d+)\.emd', file)
+            if match:
+                layer_numbers.append(int(match.group(1)))
+        
+        return max(layer_numbers) if layer_numbers else 1        
     
     def save_to_yaml(self, marking_params, fill_params):
         """Save parameters to YAML file for future reference."""
