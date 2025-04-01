@@ -65,10 +65,15 @@ class MultiLayerPrintController(QObject):
             folder_path (str): Path to the folder containing layer files
             
         Returns:
-            list: List of layer file paths
+            list: Sorted list of file paths
         """
         self.logger.info(f"Loading layer files from folder: {folder_path}")
         layer_files = self.layer_manager.load_from_folder(folder_path)
+        
+        # Log details about loaded files
+        for i, file_path in enumerate(layer_files, 1):
+            self.logger.info(f"Layer {i}: {os.path.basename(file_path)}")
+        
         return layer_files
     
     @run_async
